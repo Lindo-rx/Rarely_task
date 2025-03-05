@@ -1,27 +1,47 @@
 # textquestlib.py
 
+class ItemNotFoundError(Exception):
+    """Неверно, попробуй ещё."""
+    pass
+
+class InvalidOptionError(Exception):
+    """Неверно, попробуй ещё."""
+    pass
+
+class NotEnoughHealthError(Exception):
+    """Неверно, попробуй ещё."""
+    pass
+
+class BattleError(Exception):
+    """Неверно, попробуй ещё."""
+    pass
+
 # Создание игрока
 class Player:
-    def __init__(self, name, health, level):
+    def __init__(self, name, health, level, inventory):
         self.name = name
         self.health = health
         self.level = level
-        self.inventory = []
+        self.inventory = inventory
 
     def add_item(self, item):
         if item not in self.inventory:
             self.inventory.append(item)
-        print('Данный предмет у вас уже имеется.')
+        else:
+            print('Данный предмет у вас уже имеется.')
 
     def use_item(self, item):
         if item in self.inventory:
+            item.apply_effect(item)
             self.inventory.remove(item)
-        print('Данного предмета у вас нету.')
+        else:
+            raise ItemNotFoundError("Предмет не найден!")
 
     def level_up(self):
         if self.level >= 0:
             self.level += 1
-        print('Неправильные параметры!')
+        else:
+            print('Неправильные параметры!')
 
 
 # Создание предмета
@@ -31,16 +51,22 @@ class Item:
         self.item_type = item_type
         self.effect = effect
 
-    # TODO: Добавить логику применения предмета
+
     def apply_effect(self, player):
         if self.item_type == 'health':
-            self.effect += player.health
+            if player.health > 0:
+                self.effect += player.health
+            else:
+                raise NotEnoughHealthError("Недостаточно здоровья!")
         elif self.item_type == 'level_booster':
             self.effect += player.level
         elif self.item_type == 'name_changer':
             player.name = self.effect
         elif self.item_type == 'damage':
-
+            if player.health > 0:
+                player.health -= self.effect
+            else:
+                raise NotEnoughHealthError("Недостаточно здоровья!")
 
 
 # Создание сцены
@@ -48,54 +74,57 @@ class Scene:
     def __init__(self, name, description, options):
         self.name = name
         self.description = description
-        self.options = []
+        self.options = options
 
-    # TODO: Добавить метод для выбора действия игроком в сцене
     def choose_option(self, option):
-        if option in self.options:
+        for optional in self.options:
+            if option in optional:
+                return option
+            else:
+                raise InvalidOptionError("Неверная опция!")
 
-
-
-# Создание врага
 class Enemy:
     def __init__(self, name, health, attack_damage):
-        # TODO: Реализовать инициализацию врага
-        pass
+        self.name = name
+        self.health = health
+        self.attack_damage = attack_damage
 
-    # TODO: Добавить метод для атаки врага
-    def attack(self):
-        pass
+    def attack(self, player):
+        if player.health > 0:
+            player.health -= self.attack_damage
+        else:
+            raise BattleError("Ошибка в ходе сражения!")
 
-
-# Система боя
 class CombatSystem:
     def __init__(self, player, enemy):
-        # TODO: Реализовать инициализацию системы боя
-        pass
+        self.player = player
+        self.enemy = enemy
 
-    # TODO: Метод для начала боя
     def start_battle(self):
-        pass
-
-    # TODO: Метод для завершения боя
+        if self.player.health > 0:
+            print(f'Сражение {self.player.name} с {self.enemy.name} началось.')
+        else:
+            raise BattleError("Ошибка в ходе сражения!")
     def end_battle(self):
-        pass
+        print(f'Сражение {self.player.name} с {self.enemy.name} закончилось.')
 
-
-# Квест
 class Quest:
-    def __init__(self, player, quest_name):
-        # TODO: Реализовать инициализацию квеста
-        pass
+    def __init__(self, player, quest_name, scenes, current_scene):
+        self.player = player
+        self.quest_name = quest_name
+        self.scenes = scenes
+        self.current_scene = current_scene
 
-    # TODO: Метод для добавления сцены в квест
     def add_scene(self, scene):
-        pass
+        if scene not in self.scenes:
+            self.scenes.append(scene)
+        else:
+            print('Данная ситуация уже есть.')
 
-    # TODO: Метод для старта игры
     def start_game(self):
-        pass
+        print('Игра началась.')
 
-    # TODO: Метод для перехода к следующей сцене
     def move_to_scene(self, scene_name):
-        pass
+        for scene in self.scenes:
+            if scene == scene_name:
+                scene_name.choose_option()
